@@ -27,7 +27,8 @@ async def artists(services: ServicesDep):
     return services.player.artists()
 
 
-@router.get("/artists/{name}", response_model=ArtistDetail, summary="One artist with their albums")
+# `:path` because names and MPD track ids (file URIs) may contain "/".
+@router.get("/artists/{name:path}", response_model=ArtistDetail, summary="One artist with their albums")
 async def artist(name: str, services: ServicesDep):
     return services.player.artist(name)
 
@@ -37,6 +38,6 @@ async def tracks(services: ServicesDep):
     return services.player.library().tracks
 
 
-@router.get("/tracks/{track_id}", response_model=Track)
+@router.get("/tracks/{track_id:path}", response_model=Track)
 async def track(track_id: str, services: ServicesDep):
     return services.player.track(track_id)

@@ -53,7 +53,8 @@ class Services:
 
 
 def build_services(settings: Settings, clock: Callable[[], float] = time.monotonic) -> Services:
-    engine: AudioEngine = MockAudioEngine(clock) if settings.audio_engine == "mock" else MpdAudioEngine(settings.mpd_host, settings.mpd_port)
+    engine: AudioEngine = (MockAudioEngine(clock) if settings.audio_engine == "mock"
+                           else MpdAudioEngine(settings.mpd_host, settings.mpd_port, settings.mpd_timeout))
     dsp, probe = MockDspEngine(), MockDeviceProbe(clock)
     return Services(
         settings=settings, clock=clock, engine=engine, dsp=dsp, probe=probe,

@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.config import Settings
@@ -55,14 +56,20 @@ def test_dev_api_can_be_disabled():
     assert client.get("/api/system").json()["devApi"] is False
 
 
-def test_mpd_engine_is_a_placeholder_that_answers_501():
-    client = TestClient(create_app(Settings(audio_engine="mpd")))
-    assert client.get("/api/health").status_code == 200
-    system = client.get("/api/system").json()
-    assert system["audioEngine"]["kind"] == "mpd" and system["audioEngine"]["connected"] is False
-    assert system["devApi"] is False
-    for response in (client.get("/api/player"), client.get("/api/library"), client.post("/api/player/play"), client.get("/api/state")):
-        assert response.status_code == 501 and error_code(response) == "engine_not_implemented"
-    # Components that do not depend on the audio engine keep working.
-    assert client.get("/api/signal-chain").status_code == 200
-    assert client.get("/api/device").status_code == 200
+def test_settings_from_the_raspberry_pi_environment(monkeypatch):
+    for name, value in {"COMET_AUDIO_ENGINE": "mpd", "COMET_MPD_HOST": "127.0.0.1", "COMET_MPD_PORT": "6601", "COMET_DEV_API": "0"}.items():
+        monkeypatch.setenv(name, value)
+    settings = Settings.from_env()
+    assert (settings.audio_engine, settings.mpd_host, settings.mpd_port, settings.dev_api_enabled) == ("mpd", "127.0.0.1", 6601, False)
+
+
+def test_settings_defaults(monkeypatch):
+    for name in ("COMET_AUDIO_ENGINE", "COMET_MPD_HOST", "COMET_MPD_PORT", "COMET_DEV_API", "COMET_CORS_ORIGINS"):
+        monkeypatch.delenv(name, raising=False)
+    settings = Settings.from_env()
+    assert (settings.audio_engine, settings.mpd_host, settings.mpd_port, settings.dev_api_enabled) == ("mock", "127.0.0.1", 6600, True)
+    monkeypatch.setenv("COMET_AUDIO_ENGINE", "MPD")
+    assert Settings.from_env().dev_api_enabled is False  # off by default for real engines
+    monkeypatch.setenv("COMET_AUDIO_ENGINE", "alsa")
+    with pytest.raises(ValueError):
+        Settings.from_env()

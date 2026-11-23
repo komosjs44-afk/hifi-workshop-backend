@@ -16,6 +16,8 @@ class Settings:
     dev_api: bool | None = None
     mpd_host: str = "127.0.0.1"
     mpd_port: int = 6600
+    # Below the frontend's 4 s request timeout, so a hanging MPD still yields a readable 503.
+    mpd_timeout: float = 3.0
     extra: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -35,4 +37,5 @@ class Settings:
             dev_api=None if dev is None else dev.strip().lower() in ("1", "true", "yes", "on"),
             mpd_host=os.environ.get("COMET_MPD_HOST", cls.mpd_host),
             mpd_port=int(os.environ.get("COMET_MPD_PORT", cls.mpd_port)),
+            mpd_timeout=float(os.environ.get("COMET_MPD_TIMEOUT", cls.mpd_timeout)),
         )

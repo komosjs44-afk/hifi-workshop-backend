@@ -35,3 +35,15 @@ class NotSupportedError(DomainError):
     """The configured engine cannot do this (yet)."""
     status_code = 501
     code = "not_supported"
+
+
+class EngineError(DomainError):
+    """The audio engine (MPD) was reached but refused or failed the command."""
+    status_code = 502
+    code = "engine_error"
+
+
+class EngineUnavailableError(DomainError):
+    """The audio engine (MPD) cannot be reached. Retrying later may succeed."""
+    status_code = 503
+    code = "engine_unavailable"

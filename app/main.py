@@ -1,7 +1,9 @@
-"""FastAPI application for the Comet web interface (Hi-Fi Workshop, stage 2-A).
+"""FastAPI application for the Comet web interface (Hi-Fi Workshop, stage 2-B).
 
 Handlers are `async def` without awaits, so requests run one at a time on the event loop and
-the in-memory state needs no locking.
+the in-memory state needs no locking. With the MPD engine each MPD round trip blocks the loop
+for its duration (milliseconds on localhost, at most the client timeout), which keeps requests
+serialized on the single MPD connection.
 """
 from __future__ import annotations
 
@@ -32,7 +34,8 @@ def create_app(settings: Settings | None = None, clock: Callable[[], float] = ti
     settings = settings or Settings.from_env()
     app = FastAPI(
         title="Comet API", version=VERSION,
-        description="Stage 2-A: in-memory mock engine. No MPD, ALSA device, DSP or DAC is connected.",
+        description="Stage 2-B: the audio engine is the in-memory mock or a running MPD (COMET_AUDIO_ENGINE). "
+                    "DSP and device values are still simulated; no DAC output is verified.",
         docs_url="/api/docs", openapi_url="/api/openapi.json", redoc_url=None,
     )
     app.state.services = build_services(settings, clock)
@@ -54,7 +57,7 @@ def create_app(settings: Settings | None = None, clock: Callable[[], float] = ti
         codes = {404: "not_found", 405: "method_not_allowed"}
         return _error(error.status_code, codes.get(error.status_code, "http_error"), str(error.detail))
 
-    errors = {status: {"model": ErrorResponse} for status in (404, 409, 422, 501)}
+    errors = {status: {"model": ErrorResponse} for status in (404, 409, 422, 501, 502, 503)}
     api = APIRouter(prefix="/api", responses=errors)
     for module in (system, library, player, queue, signal_chain, device):
         api.include_router(module.router)

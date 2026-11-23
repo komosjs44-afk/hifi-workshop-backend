@@ -1,1 +1,1 @@
-"""MPD adapter. Placeholder in stage 2-A: see engine.py."""
+"""MPD adapter: protocol client (client.py) and AudioEngine implementation (engine.py)."""
